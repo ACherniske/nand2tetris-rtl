@@ -1,0 +1,13 @@
+# Project Authors
+
+## Original Course Concept
+**Noam Nisan and Shimon Schocken** [nand2tetris.org](https://www.nand2tetris.org)
+
+The "Nand2Tetris" course is a pioneering educational initiative that teaches computer science from the ground up, starting with a simple NAND gate and culminating in a functional general-purpose computer. Their original specification for the Hack architecture and the supporting toolchain (Assembler, VM Translator, Compiler) provides the foundational logic and software ecosystem upon which this FPGA project is built.
+
+---
+
+## FPGA Port and Implementation
+**Aiden Cherniske** [github.com/ACherniske/nand2tetris-rtl](https://github.com/ACherniske/nand2tetris-rtl)
+
+Aiden is responsible for the hardware-level translation of the Hack architecture into Verilog. This implementation focuses on cycle-accurate performance, incorporating a 3-stage pipeline (Fetch-Decode-Execute) and memory-mapped peripheral drivers to run the original Nand2Tetris software on real-world FPGA hardware. This port includes the development of an FPGA-specific UART bootloader for live code execution and the adaptation of the Hack machine into a portable, open-source RTL environment.

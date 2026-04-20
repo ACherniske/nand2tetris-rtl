@@ -1,0 +1,14 @@
+# Project License Information
+
+## Nand2Tetris Content
+The instructional materials, concepts, and core educational tools are copyright 
+Noam Nisan and Shimon Schocken and are licensed under the 
+Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+https://creativecommons.org/licenses/by-nc-sa/3.0/
+
+## Aiden Cherniske's Original Contributions
+Copyright (c) 2026 Aiden Cherniske.
+All original Verilog implementations, FPGA-specific bootloader code, 
+and associated documentation created by Aiden Cherniske are provided 
+under the same Creative Commons Attribution-NonCommercial-ShareAlike 3.0 
+Unported License to maintain compatibility with the original course materials.
