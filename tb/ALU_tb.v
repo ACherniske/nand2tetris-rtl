@@ -27,7 +27,7 @@ module ALU_tb;
 
     // GTKWave signal dump
     initial begin
-        $dumpfile("alu.vcd");
+        $dumpfile("ALU.vcd");
         $dumpvars(0, ALU_tb);
     end
 
