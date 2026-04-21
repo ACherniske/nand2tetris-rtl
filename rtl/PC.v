@@ -1,8 +1,23 @@
-module PC(
-    input  clk, reset, load, inc,
-    input  [15:0] in,
+`timescale 1ns / 1ps
+
+module PC (
+    input wire clk,
+    input wire reset,
+    input wire load,
+    input wire inc,
+    input wire [15:0] in,
     output reg [15:0] out
 );
-    // TODO 1: Implement priority: reset -> load -> inc -> hold
-    // TODO 2: Handle 16-bit wraparound on increment (if necessary)
+
+    initial out = 16'd0;
+
+    always @(posedge clk) begin
+        if (reset)
+            out <= 16'd0;
+        else if (load)
+            out <= in;
+        else if (inc)
+            out <= out + 16'd1;
+    end
+
 endmodule
