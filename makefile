@@ -11,11 +11,9 @@ ifneq ($(wildcard $(OSS_CAD_SUITE_PATH)/bin/yosys),)
 endif
 
 # Files
-# Add all your RTL files here
-SOURCES := $(wildcard rtl/*.v)
-# The ROM content is now decoupled from the bitstream build
-# We use a placeholder .mem file just to satisfy Yosys if needed
-ROM_MEM := rom_init.mem
+SOURCES    := $(wildcard rtl/*.v)
+TB_SOURCES := $(wildcard tb/*.v)
+ROM_MEM    := rom_init.mem
 
 # Tools
 YOSYS    := yosys
@@ -23,37 +21,48 @@ NEXTPNR  := nextpnr-ice40
 ICEPACK  := icepack
 ICEPROG  := iceprog
 PYTHON   := python3
+IVERILOG := iverilog
+VVP      := vvp
 
-.PHONY: all clean flash prog
+.PHONY: all clean flash prog tb
 
 all: build/$(TOP).bin
 
-# 1. Synthesis (Using generic ROM initialization if needed)
+# --- Synthesis & PNR ---
 build/$(TOP).json: $(SOURCES)
 	@echo "  SYN    $@"
 	@mkdir -p build
 	$(YOSYS) -q -p "synth_ice40 -top $(TOP) -json $@" $(SOURCES)
 
-# 2. Place and Route
 build/$(TOP).asc: build/$(TOP).json $(PCF)
 	@echo "  PNR    $@"
 	$(NEXTPNR) -q --$(DEVICE) --pcf $(PCF) --json $< --asc $@
 
-# 3. Pack Bitstream
 build/$(TOP).bin: build/$(TOP).asc
 	@echo "  PACK   $@"
 	$(ICEPACK) $< $@
 
-# 4. Flash Bitstream (Standard FPGA programming)
+# --- Simulation ---
+# Usage: make tb FILE=ALU
+tb:
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make tb FILE=<name_of_module>"; \
+	else \
+		echo "  SIM    $(FILE)_tb.v"; \
+		$(IVERILOG) -o build/sim.out tb/$(FILE)_tb.v $(SOURCES); \
+		$(VVP) build/sim.out; \
+		echo "  GTK    Launching gtkwave..."; \
+		gtkwave $(FILE).vcd & \
+	fi
+
+# --- Hardware Programming ---
 flash: build/$(TOP).bin
 	@echo "  PROG   $<"
 	$(ICEPROG) $<
 
-# 5. Program ROM via UART Bootloader
-# Usage: make prog PROGRAM=programs/asm/Add.hack
 prog:
 	@echo "  UART   $(PROGRAM)"
 	$(PYTHON) tools/flasher.py $(PROGRAM)
 
 clean:
-	rm -rf build/
+	rm -rf build/ *.vcd
