@@ -48,11 +48,16 @@ tb:
 	@if [ -z "$(FILE)" ]; then \
 		echo "Usage: make tb FILE=<name_of_module>"; \
 	else \
+		mkdir -p build; \
 		echo "  SIM    $(FILE)_tb.v"; \
 		$(IVERILOG) -o build/sim.out tb/$(FILE)_tb.v $(SOURCES); \
-		$(VVP) build/sim.out; \
-		echo "  GTK    Launching gtkwave..."; \
-		gtkwave $(FILE).vcd & \
+		if [ $$? -eq 0 ]; then \
+			$(VVP) build/sim.out; \
+			echo "  GTK    Launching gtkwave..."; \
+			gtkwave $(FILE).vcd & \
+		else \
+			echo "  ERROR  Compilation failed!"; \
+		fi \
 	fi
 
 # --- Hardware Programming ---
