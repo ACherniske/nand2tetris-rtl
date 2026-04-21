@@ -1,0 +1,23 @@
+# --- Build Artifacts (from Makefile) ---
+build/
+
+# --- Simulation & GTKWave ---
+*.vcd
+*.lxt
+*.lxt2
+*.fst
+gtkwave.ini
+
+# --- Python/Tooling Cache ---
+__pycache__/
+*.pyc
+
+# --- OS-specific noise ---
+.DS_Store
+*.swp
+*~
+
+# --- IDE/Editor Specific ---
+.vscode/
+.idea/
+.settings/
