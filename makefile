@@ -46,18 +46,19 @@ build/$(TOP).bin: build/$(TOP).asc
 # Usage: make tb FILE=ALU
 tb:
 	@if [ -z "$(FILE)" ]; then \
-		echo "Usage: make tb FILE=<name_of_module>"; \
+		echo "Usage: make tb FILE=<name>"; \
 	else \
 		mkdir -p build; \
-		echo "  SIM    $(FILE)_tb.v"; \
-		$(IVERILOG) -o build/sim.out tb/$(FILE)_tb.v $(SOURCES); \
+		$(IVERILOG) -DVERBOSE -o build/sim.out tb/$(FILE)_tb.v $(SOURCES); \
 		if [ $$? -eq 0 ]; then \
 			$(VVP) build/sim.out; \
-			mv $(FILE).vcd build/; \
-			echo "  GTK    Launching gtkwave..."; \
-			gtkwave build/$(FILE).vcd & \
-		else \
-			echo "  ERROR  Compilation failed!"; \
+			if [ -f test.vcd ]; then \
+				mv test.vcd build/$(FILE).vcd; \
+				echo "  GTK    Launching gtkwave..."; \
+				gtkwave build/$(FILE).vcd & \
+			else \
+				echo "  ERROR  VCD file not generated."; \
+			fi \
 		fi \
 	fi
 
@@ -71,4 +72,4 @@ prog:
 	$(PYTHON) tools/flasher.py $(PROGRAM)
 
 clean:
-	rm -rf build/
+	rm -rf build/ *.vcd

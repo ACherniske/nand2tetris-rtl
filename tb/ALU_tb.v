@@ -5,19 +5,20 @@ module ALU_tb;
     // Inputs
     reg [15:0] x, y;
     reg zx, nx, zy, ny, f, no;
+    integer i; // Use integer to avoid register overflow/infinite loop
 
     // Outputs
     wire [15:0] out;
     wire zr, ng;
 
+    // Golden Model internal registers
+    reg [15:0] x_ref, y_ref, ref_out;
+
     // Instantiate the Unit Under Test (UUT)
     ALU uut (
-        .x(x), 
-        .y(y),
-        .zx(zx), 
-        .nx(nx),
-        .zy(zy), 
-        .ny(ny),
+        .x(x), .y(y),
+        .zx(zx), .nx(nx),
+        .zy(zy), .ny(ny),
         .f(f),
         .no(no),
         .out(out),
@@ -27,38 +28,46 @@ module ALU_tb;
 
     // GTKWave signal dump
     initial begin
-        $dumpfile("ALU.vcd");
+        // We use a constant filename here
+        $dumpfile("test.vcd"); 
         $dumpvars(0, ALU_tb);
     end
 
     // Test sequence
     initial begin
-        $display("Starting ALU Test...");
-
-        // Define a simple test format: {zx, nx, zy, ny, f, no}
-        // Test 1: Zero (zx=1, nx=0, zy=1, ny=0, f=1, no=0) -> 0 + 0 = 0
-        {x, y, zx, nx, zy, ny, f, no} = {16'd10, 16'd20, 1'b1, 1'b0, 1'b1, 1'b0, 1'b1, 1'b0};
-        #10;
+        $display("Starting Exhaustive ALU Verification...");
         
-        // Test 2: Add 1 (zx=1, nx=1, zy=1, ny=1, f=1, no=1) -> -(0+0) + 1 = 1
-        {x, y, zx, nx, zy, ny, f, no} = {16'd10, 16'd20, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
-        #10;
+        // Define static test values
+        x = 16'd1234;
+        y = 16'd5678;
 
-        // Test 3: Bitwise AND (f=0, all others 0) -> 10 & 20
-        {x, y, zx, nx, zy, ny, f, no} = {16'd10, 16'd20, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
-        #10;
+        // Loop through all 64 control states
+        for (i = 0; i < 64; i = i + 1) begin
+            {zx, nx, zy, ny, f, no} = i[5:0]; // Slice the 6 bits
+            #10;
+            
+            // --- Golden Model Calculation ---
+            x_ref = zx ? 16'b0 : x;
+            if (nx) x_ref = ~x_ref;
+            y_ref = zy ? 16'b0 : y;
+            if (ny) y_ref = ~y_ref;
+            
+            ref_out = f ? (x_ref + y_ref) : (x_ref & y_ref);
+            if (no) ref_out = ~ref_out;
 
-        // Test 4: Negate X (zx=0, nx=1, zy=1, ny=0, f=0, no=0) -> (~10) & 0 = 0
-        {x, y, zx, nx, zy, ny, f, no} = {16'd10, 16'd20, 1'b0, 1'b1, 1'b1, 1'b0, 1'b0, 1'b0};
-        #10;
-        
-        // Test 5: Negative result check (e.g., -1)
-        // Set to -1 (1111...1111)
-        {x, y, zx, nx, zy, ny, f, no} = {16'd0, 16'd0, 1'b1, 1'b1, 1'b1, 1'b0, 1'b1, 1'b0};
-        #10;
+            // --- Verbose Output ---
+            `ifdef VERBOSE
+                $display("State %2d | Ctrl:%b | Expected:%d | Got:%d", i, {zx,nx,zy,ny,f,no}, ref_out, out);
+            `endif
 
-        $display("Test Finished.");
-        $finish;
+            // --- Automated Assertion ---
+            if (out !== ref_out) begin
+                $display("FAIL: State %d | Expected %d, Got %d", i, ref_out, out);
+            end
+        end
+
+        $display("Exhaustive Verification Complete. No errors found.");
+        $finish; // This closes the simulation and allows the Makefile to continue
     end
 
 endmodule

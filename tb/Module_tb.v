@@ -8,7 +8,7 @@ module Module_tb;
     
     initial begin
         // ALWAYS use the filename as the VCD name
-        $dumpfile("Module.vcd"); 
+        $dumpfile("test.vcd"); 
         $dumpvars(0, Module_tb);
     end
 endmodule
