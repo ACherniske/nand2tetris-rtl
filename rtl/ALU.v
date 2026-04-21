@@ -1,11 +1,29 @@
 module ALU(
-    input  [15:0] x, y,
-    input  zx, nx, zy, ny, f, no,
-    output [15:0] out,
-    output zr, ng
+    input  [15:0] x, y,     // 16 bit inputs
+    input  zx, nx,          // x-input control: zero, negate
+    input  zy, ny,          // y-input control: zero, negate
+    input  f,               // Function: 1 for Add 0 for And
+    input  no,              // Output: negate
+    output [15:0] out,      // 16 bit output
+    output zr, ng           // Zero and Negative status flags
 );
-    // TODO 1: Implement the pre-processing (zx, nx, zy, ny)
-    // TODO 2: Implement the functional selection (f) -> (x & y) vs (x + y)
-    // TODO 3: Implement post-processing (no) and invert the result
-    // TODO 4: Calculate zr (1 if out == 0, else 0) and ng (1 if out < 0, else 0)
+
+    reg [15:0] x_processed, y_processed, alu_out;
+
+    always @(*) begin
+        x_processed = zx ? 16'b0 : x; // Zero x if zx is 1
+        if (nx) x_processed = ~x_processed; // Negate x if nx is 1
+
+        y_processed = zy ? 16'b0 : y; // Zero y if zy is 1
+        if (ny) y_processed = ~y_processed; // Negate y if ny is 1
+
+        alu_out = f ? (x_processed + y_processed) : (x_processed & y_processed);
+
+        if (no) alu_out = ~alu_out; // Negate output if no is 1
+    end
+
+    assign out = alu_out;
+    assign zr = (alu_out == 16'b0) ? 1 : 0; // Set zr if output is zero
+    assign ng = alu_out[15]; // Set ng if output is negative (MSB is 1)
+
 endmodule
