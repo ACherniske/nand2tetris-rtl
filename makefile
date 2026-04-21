@@ -53,8 +53,9 @@ tb:
 		$(IVERILOG) -o build/sim.out tb/$(FILE)_tb.v $(SOURCES); \
 		if [ $$? -eq 0 ]; then \
 			$(VVP) build/sim.out; \
+			mv $(FILE).vcd build/; \
 			echo "  GTK    Launching gtkwave..."; \
-			gtkwave $(FILE).vcd & \
+			gtkwave build/$(FILE).vcd & \
 		else \
 			echo "  ERROR  Compilation failed!"; \
 		fi \
@@ -70,4 +71,4 @@ prog:
 	$(PYTHON) tools/flasher.py $(PROGRAM)
 
 clean:
-	rm -rf build/ *.vcd
+	rm -rf build/
