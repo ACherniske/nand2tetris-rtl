@@ -7,50 +7,44 @@ module CPU_tb;
     wire [15:0] outM, addressM, pc;
     wire writeM;
 
-    CPU uut (.*);
+    CPU uut (
+        .clk(clk), .reset(reset), .instruction(instruction),
+        .inM(inM), .outM(outM), .writeM(writeM),
+        .addressM(addressM), .pc(pc)
+    );
 
-    // Reference State
-    reg [15:0] ref_A, ref_D, ref_PC;
-
+    initial clk = 0;
     always #5 clk = ~clk;
 
-    // --- GOLDEN MODEL LOGIC ---
-    // This block mirrors the Hack Architecture behavior independently
-    always @(posedge clk) begin
-        if (reset) begin
-            ref_A <= 0; ref_D <= 0; ref_PC <= 0;
-        end else begin
-            // Simplified Golden Model logic
-            if (~instruction[15]) begin // A-Instruction
-                ref_A <= instruction;
-                ref_PC <= ref_PC + 1;
-            end else begin // C-Instruction
-                // In a real Golden Model, you would replicate the ALU logic here
-                // ... (Logic to update ref_A, ref_D, and ref_PC based on instruction bits) ...
-                ref_PC <= ref_PC + 1; 
-            end
-        end
-    end
-
-    // --- ASSERTION: Compare UUT to Golden Model ---
-    always @(negedge clk) begin
-        #1;
-        if (uut.a_reg_out !== ref_A) begin
-            $display("MISMATCH! A-Reg Expected: %h, Got: %h", ref_A, uut.a_reg_out);
-            $finish;
-        end
-    end
-
     initial begin
-        $dumpfile("test.vcd"); $dumpvars(0, CPU_tb);
-        clk = 0; reset = 1; instruction = 0;
+        $dumpfile("test.vcd");
+        $dumpvars(0, CPU_tb);
+        
+        // 1. Initialize
+        reset = 1; instruction = 0; inM = 0;
         #20 reset = 0;
 
-        // Feed instructions and let the Golden Model verify them automatically
-        @(negedge clk) instruction = 16'h000A; // @10
-        repeat(5) @(negedge clk);
+        // 2. Feed instructions synchronized to PC
+        // @10
+        wait(pc == 0); @(negedge clk) instruction = 16'h000A;
+        // D=A
+        wait(pc == 1); @(negedge clk) instruction = 16'hEC10;
+        // @20
+        wait(pc == 2); @(negedge clk) instruction = 16'h0014;
+        // D=D+A
+        wait(pc == 3); @(negedge clk) instruction = 16'hE090;
+        // 5. Send NOP (0000)
+        wait(pc == 4); @(negedge clk) instruction = 16'h0000;
         
-        $display("Golden Model Verification Passed!");
+        // 3. Final Verification
+        repeat(2) @(negedge clk);
+        
+        if (uut.d_reg_out === 16'd30) begin 
+            $display("SUCCESS! D = %d", uut.d_reg_out);
+        end else begin
+            $display("FAILURE! Expected 30 (hex 1E), Got %d (hex %h)", uut.d_reg_out, uut.d_reg_out);
+        end
+        
         $finish;
     end
 endmodule
