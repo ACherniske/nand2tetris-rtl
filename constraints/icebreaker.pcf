@@ -1,0 +1,16 @@
+# 12MHz Clock
+set_io clk_12mhz       35
+
+# Reset Button (btn_n is active low)
+set_io btn_n           10
+
+# UART Pins (PMOD 1A)
+set_io uart_tx_pin     4   # UART TX
+set_io uart_rx_pin     2   # UART RX
+
+# LEDs (Active low)
+set_io ledn[0]         11
+set_io ledn[1]         37
+set_io ledn[2]         38
+set_io ledn[3]         39
+set_io ledn[4]         40
