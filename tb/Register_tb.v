@@ -27,10 +27,32 @@ module Register_tb;
 
         repeat(5) @(posedge clk); 
 
-        // Test Sequence
-        @(negedge clk) begin in = 16'hABCD; load = 1; expected_out = 16'hABCD; end
-        @(negedge clk) begin in = 16'h1234; load = 0; end // expected_out remains ABCD
-        @(negedge clk) begin load = 1; expected_out = 16'h1234; end
+        // Test 1: Load ABCD
+        @(negedge clk) begin 
+            in = 16'hABCD; 
+            load = 1;
+            expected_out = 16'hABCD; // Update expected BEFORE next posedge
+        end
+        
+        // Test 2: Try to load 1234 but load=0, should retain ABCD
+        @(negedge clk) begin 
+            in = 16'h1234; 
+            load = 0; 
+            expected_out = 16'hABCD; // Should still be ABCD
+        end
+        
+        // Test 3: Now load 1234 with load=1
+        @(negedge clk) begin 
+            load = 1;
+            expected_out = 16'h1234; // Now expect 1234
+        end
+        
+        // Test 4: Disable load again
+        @(negedge clk) begin
+            load = 0;
+            in = 16'hFFFF;
+            expected_out = 16'h1234; // Should still be 1234
+        end
         
         #20; 
 

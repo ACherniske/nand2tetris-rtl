@@ -13,6 +13,10 @@ module ALU_tb;
 
     // Golden Model internal registers
     reg [15:0] x_ref, y_ref, ref_out;
+    reg ref_zr, ref_ng;
+    
+    // Error tracking
+    reg error_found = 0;
 
     // Instantiate the Unit Under Test (UUT)
     ALU uut (
@@ -54,19 +58,42 @@ module ALU_tb;
             
             ref_out = f ? (x_ref + y_ref) : (x_ref & y_ref);
             if (no) ref_out = ~ref_out;
+            
+            // Calculate expected flags
+            ref_zr = (ref_out == 16'b0) ? 1 : 0;
+            ref_ng = ref_out[15];
 
             // --- Verbose Output ---
             `ifdef VERBOSE
-                $display("State %2d | Ctrl:%b | Expected:%d | Got:%d", i, {zx,nx,zy,ny,f,no}, ref_out, out);
+                $display("State %2d | Ctrl:%b | Expected:%d | Got:%d | ZR:%b/%b | NG:%b/%b", 
+                         i, {zx,nx,zy,ny,f,no}, ref_out, out, ref_zr, zr, ref_ng, ng);
             `endif
 
             // --- Automated Assertion ---
             if (out !== ref_out) begin
-                $display("FAIL: State %d | Expected %d, Got %d", i, ref_out, out);
+                $display("FAIL: State %d | Output mismatch | Expected %h, Got %h", i, ref_out, out);
+                error_found = 1;
+                $finish;
+            end
+            
+            if (zr !== ref_zr) begin
+                $display("FAIL: State %d | ZR flag mismatch | Expected %b, Got %b", i, ref_zr, zr);
+                error_found = 1;
+                $finish;
+            end
+            
+            if (ng !== ref_ng) begin
+                $display("FAIL: State %d | NG flag mismatch | Expected %b, Got %b", i, ref_ng, ng);
+                error_found = 1;
+                $finish;
             end
         end
 
-        $display("Exhaustive Verification Complete. No errors found.");
+        if (!error_found) begin
+            $display("Exhaustive Verification Complete. No errors found.");
+        end else begin
+            $display("ALU Verification FAILED.");
+        end
         $finish; // This closes the simulation and allows the Makefile to continue
     end
 
