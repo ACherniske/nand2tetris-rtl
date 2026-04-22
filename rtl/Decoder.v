@@ -16,7 +16,8 @@ module Decoder (
     assign is_c_instr = instruction[15];
 
     // C-instruction field mapping
-    // bits 12:7 are ALU control (a, c1, c2, c3, c4, c5, c6)
+    // bits 11:6 are ALU control (c1, c2, c3, c4, c5, c6)
+    // bit 12 is the 'a' bit (handled in CPU for A/M selection)
     assign alu_ctrl = instruction[11:6];
     
     // Dest bits (bits 5:3)
