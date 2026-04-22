@@ -1,28 +1,52 @@
-module CPU(
-    input  clk, reset,
-    input  [15:0] inM, instruct,
-    output [15:0] outM,
-    output writeM,
-    output [14:0] addressM, pc_out
+`timescale 1ns / 1ps
+
+module CPU (
+    input wire clk,
+    input wire reset,
+    input wire [15:0] instruction,
+    input wire [15:0] inM,
+    output wire [15:0] outM,
+    output wire writeM,
+    output wire [15:0] addressM,
+    output wire [15:0] pc
 );
-    // TODO 1: Instruction Decoder: 
-    //         Split 'instruct' into opcode, A/M select, ALU control bits, 
-    //         dest bits (A, D, M), and jump bits.
 
-    // TODO 2: A-Register Mux:
-    //         Select between 'instruct' (A-instr) and 'ALU_out' (C-instr).
+    // Internal wires for connections
+    wire is_c;
+    wire [5:0] alu_ctrl;
+    wire load_a, load_d, jump;
+    wire zr, ng;
+    wire [15:0] a_reg_out, d_reg_out, alu_out, alu_y_in;
 
-    // TODO 3: ALU Input Mux:
-    //         Select between A-register and 'inM' based on the 'a' bit.
+    // 1. Decoder (Control Unit)
+    Decoder decoder (
+        .instruction(instruction), .zr(zr), .ng(ng),
+        .is_c_instr(is_c), .alu_ctrl(alu_ctrl),
+        .load_a(load_a), .load_d(load_d), .write_m(writeM), .jump(jump)
+    );
 
-    // TODO 4: D-Register & A-Register Control:
-    //         Enable load signal only if corresponding dest bit is set 
-    //         AND instruction is a C-instruction.
+    // 2. A-Register (Can be loaded by A-instruction or ALU result)
+    wire [15:0] a_mux_out = is_c ? alu_out : instruction;
+    Register a_reg (.clk(clk), .load(load_a), .in(a_mux_out), .out(a_reg_out));
 
-    // TODO 5: Jump Logic:
-    //         Check ALU flags (zr, ng) against j1, j2, j3 bits.
-    //         Enable PC load if jump condition met.
+    // 3. D-Register
+    Register d_reg (.clk(clk), .load(load_d), .in(alu_out), .out(d_reg_out));
 
-    // TODO 6: Assign outputs: 
-    //         outM = ALU_out, addressM = A_reg[14:0], writeM = d3 & isC
+    // 4. ALU Input MUX (Selects between A-reg or Memory M)
+    assign alu_y_in = (is_c & instruction[12]) ? inM : a_reg_out;
+
+    // 5. ALU
+    ALU alu (
+        .x(d_reg_out), .y(alu_y_in),
+        .zx(alu_ctrl[5]), .nx(alu_ctrl[4]), .zy(alu_ctrl[3]), .ny(alu_ctrl[2]), .f(alu_ctrl[1]), .no(alu_ctrl[0]),
+        .out(alu_out), .zr(zr), .ng(ng)
+    );
+
+    // 6. Program Counter
+    PC pc_unit (.clk(clk), .reset(reset), .load(jump), .inc(1'b1), .in(a_reg_out), .out(pc));
+
+    // Outputs
+    assign outM = alu_out;
+    assign addressM = a_reg_out;
+
 endmodule
